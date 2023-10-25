@@ -226,6 +226,7 @@ int blkdev_zone_mgmt(struct block_device *bdev, enum req_opf op,
 		return -EINVAL;
 
 	/* Check alignment (handle eventual smaller last zone) */
+	/*
 	if (sector & (zone_sectors - 1)){
 		printk("MJ: block/blk-zoned.c/blkdev_zone_mgmt -> sector : %llu, (zone_sector-1) : %llu\n", sector, zone_sectors);
 		return -EINVAL;
@@ -235,7 +236,8 @@ int blkdev_zone_mgmt(struct block_device *bdev, enum req_opf op,
 		printk("MJ: block/blk-zoned.c/blkdev_zone_mgmt -> end_sector : %llu, capacity : %llu\n", end_sector, capacity);
 		return -EINVAL;
 	}
-	
+	*/
+
 	while (sector < end_sector) {
 		bio = blk_next_bio(bio, 0, gfp_mask);
 		bio_set_dev(bio, bdev);
@@ -460,7 +462,12 @@ static int blk_revalidate_zone_cb(struct blk_zone *zone, unsigned int idx,
 		*/
 		args->zone_capacity_sectors = zone->capacity;
 		args->zone_sectors = zone->len;
-		args->nr_zones = (capacity + zone->len - 1) >> ilog2(zone->len);
+		args->nr_zones = div64_u64((capacity + zone->len - 1), zone->len);
+		printk("MJ: 1_blk_revalidate_zone_cb ;; args->nr_zones : %lld\n", args->nr_zones);
+		
+		//args->nr_zones = (capacity + zone->len - 1) >> ilog2(zone->len);
+                //printk("MJ: 2_blk_revalidate_zone_cb ;; args->nr_zones : %lld\n", args->nr_zones);
+
 	} else if (zone->start + args->zone_sectors < capacity) {
 		if (zone->len != args->zone_sectors) {
 			pr_warn("%s: Invalid zoned device with non constant zone size\n",

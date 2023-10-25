@@ -261,6 +261,7 @@ static void req_bio_endio(struct request *rq, struct bio *bio,
 			bio->bi_iter.bi_sector = rq->__sector + sector_offset;
 		}
 	}
+	//MJ_need to be annotate
 	if (req_op(rq) == REQ_OP_READ && blk_met_rq(rq)) {
 		bio->bi_page_md.mapping = page_md->mapping;
 		bio->bi_page_md.index = page_md->index;
@@ -779,9 +780,27 @@ static inline blk_status_t blk_check_zone_append(struct request_queue *q,
 		return BLK_STS_NOTSUPP;
 
 	/* The bio sector must point to the start of a sequential zone */
+	//printk("MJ:blk_check_zone_append -> pos: %llu, blk_queue_zone_sectors(q): %llu, (blk_queue_zone_sectors(q) - 1): %llu\n", pos, blk_queue_zone_sectors(q), blk_queue_zone_sectors(q)-1);
+
+	/*
 	if (pos & (blk_queue_zone_sectors(q) - 1) ||
 	    !blk_queue_zone_is_seq(q, pos))
 		return BLK_STS_IOERR;
+	*/
+
+	/*
+	printk("MJ:(pos & blk_queue_zone_sectors(q) - 1) : ");
+	printk((pos & (blk_queue_zone_sectors(q) - 1)) ? "true" : "false");
+	printk("\n");
+	
+	printk("MJ:(pos / blk_queue_zone_sectors(q)) : ");
+	printk((pos % blk_queue_zone_sectors(q)) ? "true" : "false");
+	printk("\n");
+	*/
+
+	if (pos % (blk_queue_zone_sectors(q)) ||
+            !blk_queue_zone_is_seq(q, pos))
+                return BLK_STS_IOERR;
 
 	/*
 	 * Not allowed to cross zone boundaries. Otherwise, the BIO will be
@@ -1432,7 +1451,9 @@ bool blk_update_request(struct request *req, blk_status_t error,
 {
 	int total_bytes;
 	struct page_md *v_page_md;
-
+	
+	//trace_block_rq_complete : block IO operation completed by device driver
+	//It indicates that some portion of operation request has been completed by the device driver.By checking whether rq->bio is null or non-NULL
 	trace_block_rq_complete(req, blk_status_to_errno(error), nr_bytes);
 
 	if (!req->bio)
