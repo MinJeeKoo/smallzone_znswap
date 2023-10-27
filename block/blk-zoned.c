@@ -462,11 +462,17 @@ static int blk_revalidate_zone_cb(struct blk_zone *zone, unsigned int idx,
 		*/
 		args->zone_capacity_sectors = zone->capacity;
 		args->zone_sectors = zone->len;
-		args->nr_zones = div64_u64((capacity + zone->len - 1), zone->len);
-		printk("MJ: 1_blk_revalidate_zone_cb ;; args->nr_zones : %lld\n", args->nr_zones);
-		
-		//args->nr_zones = (capacity + zone->len - 1) >> ilog2(zone->len);
-                //printk("MJ: 2_blk_revalidate_zone_cb ;; args->nr_zones : %lld\n", args->nr_zones);
+
+		if(is_power_of_2(zone->len)) //power-of-2
+		{
+			args->nr_zones = (capacity + zone->len - 1) >> ilog2(zone->len);
+                	printk("MJ: 1_blk_revalidate_zone_cb ;; args->nr_zones : %lld\n", args->nr_zones);
+		}
+		else	//non-power-of-2
+		{
+			args->nr_zones = div64_u64((capacity + zone->len - 1), zone->len);
+			printk("MJ: 2_blk_revalidate_zone_cb ;; args->nr_zones : %lld\n", args->nr_zones);
+		}
 
 	} else if (zone->start + args->zone_sectors < capacity) {
 		if (zone->len != args->zone_sectors) {
